@@ -91,3 +91,17 @@ Start React app:
 
 
 
+### 🖥️ Login Page View
+
+![Login Page](./react_Assignment/public/screenshots/login.png)
+
+### 🖥️ Sign up Page View
+
+![Register Page](./react_Assignment/public/screenshots/register.png)
+
+### 🖥️ Task Form View
+
+![Task Form](./react_Assignment/public/screenshots/form.png)
+
+
+
