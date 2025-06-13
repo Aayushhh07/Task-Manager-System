@@ -87,6 +87,7 @@ Start React app:
 ## Screenshots
 ### 🖥️ Dashboard View
 
-![Dashboard Screenshot](./screenshots/dashboard.png)
+![Dashboard Screenshot](./react_Assignment/public/screenshots/dashboard.png)
+
 
 
