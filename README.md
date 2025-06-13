@@ -84,6 +84,7 @@ Start React app:
 ```npm run dev```
 
 ---
-##Screenshots
+## Screenshots
+![Dashboard Screenshot](./screenshots/dashboard.png)
 
 
