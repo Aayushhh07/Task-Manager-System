@@ -1,11 +1,15 @@
-// tailwind.config.js
-module.exports = {
+/** @type {import('tailwindcss').Config} */
+export default {
   content: [
-    "./index.html",  // Ensure it includes this for the HTML file
-    "./src/**/*.{js,jsx,ts,tsx}"  // Ensure it includes your JSX files in the src folder
+    './index.html',
+    './src/**/*.{js,jsx,ts,tsx}',
+    './public/**/*.{html,js}'
   ],
   theme: {
     extend: {},
   },
-  plugins: [],
-};
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+}; 

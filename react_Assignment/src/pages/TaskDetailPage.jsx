@@ -1,48 +1,44 @@
-import { useParams } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTaskById } from '../redux/taskSlice';
-import { useEffect } from 'react';
+import { fetchTasksThunk, deleteTaskThunk } from '../redux/taskSlice';
+import Loader from '../components/Loader';
+import Taskcard from '../components/Taskcard';
 
-function TaskDetailPage() {
+const TaskDetailPage = () => {
   const { id } = useParams();
   const dispatch = useDispatch();
-  const { task, loading } = useSelector((state) => state.tasks);
+  const navigate = useNavigate();
+  const { tasks, loading, error } = useSelector((state) => state.tasks);
+  const { user } = useSelector((state) => state.auth);
+  const task = tasks.find(t => t._id === id);
 
   useEffect(() => {
-    dispatch(fetchTaskById(id));
-  }, [id, dispatch]);
+    if (!task) dispatch(fetchTasksThunk());
+  }, [dispatch, task]);
 
-  if (loading || !task) return <p className="p-4">Loading...</p>;
+  const handleDelete = (id) => {
+    if (window.confirm('Delete this task?')) {
+      dispatch(deleteTaskThunk(id)).then(() => navigate('/'));
+    }
+  };
+
+  if (loading) return <Loader />;
+  if (error) return <div className="text-red-500">{error}</div>;
+  if (!task) return <div>Task not found.</div>;
 
   return (
-    <div className="p-8 max-w-3xl mx-auto">
-      <h2 className="text-3xl font-bold mb-2">{task.title}</h2>
-      <p className="text-gray-700 mb-4">{task.description}</p>
-
-      <div className="mb-4 space-y-1 text-sm">
-        <p><strong>Status:</strong> {task.status}</p>
-        <p><strong>Priority:</strong> {task.priority}</p>
-        <p><strong>Due Date:</strong> {new Date(task.dueDate).toLocaleDateString()}</p>
-        {task.assignedTo && <p><strong>Assigned To:</strong> {task.assignedTo.name || task.assignedTo}</p>}
-      </div>
-
-      {task.attachments?.length > 0 && (
-        <div className="mt-4">
-          <h4 className="font-semibold mb-2">Attachments:</h4>
-          {task.attachments.map((file, idx) => (
-            <a key={idx}
-              href={`http://localhost:4000/${file}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-blue-600 underline"
-            >
-              📄 Document {idx + 1}
-            </a>
-          ))}
-        </div>
-      )}
+    <div className="max-w-2xl mx-auto">
+      <Link to="/" className="text-blue-600 underline">&larr; Back to Dashboard</Link>
+      <Taskcard
+        task={task}
+        onEdit={() => {}}
+        onDelete={handleDelete}
+        isAdmin={user?.role === 'admin'}
+        isSelf={task.assignedTo?._id === user?._id}
+      />
     </div>
   );
-}
+};
 
-export default TaskDetailPage;
+export default TaskDetailPage; 

@@ -1,202 +1,160 @@
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { fetchTasks } from '../redux/taskSlice';
-import TaskCard from '../components/Taskcard';
+import { fetchTasksThunk, createTaskThunk, updateTaskThunk, deleteTaskThunk, fetchStatsThunk } from '../redux/taskSlice';
+import { fetchUsersThunk } from '../redux/authSlice';
+import Taskcard from '../components/Taskcard';
 import TaskForm from '../components/TaskForm';
-import Navbar from '../components/navbar';
+import Loader from '../components/Loader';
+import { PieChart, Pie, Cell, Legend, Tooltip, ResponsiveContainer } from 'recharts';
 
-function DashboardPage() {
+const STATUS_COLORS = [
+  '#22c55e', // green
+  '#facc15', // yellow
+  '#3b82f6', // blue
+  '#ef4444', // red
+  '#a78bfa', // purple
+  '#f472b6', // pink
+  '#f97316', // orange
+  '#64748b', // gray
+];
+const getColor = idx => STATUS_COLORS[idx % STATUS_COLORS.length];
+
+const DashboardPage = () => {
   const dispatch = useDispatch();
-  const { tasks = [], loading, error } = useSelector((state) => state.tasks);
   const { user } = useSelector((state) => state.auth);
-
+  const { tasks, loading, error, stats } = useSelector((state) => state.tasks);
   const [showForm, setShowForm] = useState(false);
-  const [filter, setFilter] = useState('all');
   const [editTask, setEditTask] = useState(null);
+  const [search, setSearch] = useState('');
+  const [filter, setFilter] = useState('');
+  const [sort, setSort] = useState('');
+  const users = useSelector((state) => state.auth.users);
 
   useEffect(() => {
-    if (user) {
-      dispatch(fetchTasks());
-    }
-  }, [dispatch, user]);
+    dispatch(fetchTasksThunk({ search, filter, sort }));
+    dispatch(fetchStatsThunk());
+    if (user?.role === 'admin') dispatch(fetchUsersThunk());
+  }, [dispatch, user, search, filter, sort]);
 
-  const filteredTasks = tasks.filter((task) => {
-    if (!user) return false;
-
-    const assignedToId = task?.assignedTo?._id || task?.assignedTo;
-
-    // Admin can see all tasks
-    if (user.role === 'admin') {
-      if (filter === 'completed') return task.status === 'completed';
-      if (filter === 'pending') return task.status !== 'completed';
-      return true;
-    }
-
-    // Normal user sees only their assigned tasks
-    if (assignedToId !== user._id) return false;
-
-    if (filter === 'completed') return task.status === 'completed';
-    if (filter === 'pending') return task.status !== 'completed';
-    return true;
-  });
-
-  const handleTaskEdit = (task) => {
+  const handleCreate = (data) => {
+    dispatch(createTaskThunk(data)).then(() => setShowForm(false));
+  };
+  const handleEdit = (task) => {
     setEditTask(task);
     setShowForm(true);
   };
-
-  const handleTaskFormClose = () => {
-    setShowForm(false);
-    setEditTask(null);
+  const handleUpdate = (data) => {
+    dispatch(updateTaskThunk({ id: editTask._id, data })).then(() => {
+      setEditTask(null);
+      setShowForm(false);
+    });
+  };
+  const handleDelete = (id) => {
+    if (window.confirm('Delete this task?')) dispatch(deleteTaskThunk(id));
   };
 
+  const filteredTasks = tasks.filter(t => t.title.toLowerCase().includes(search.toLowerCase()));
+
+  // Dynamically compute status counts from tasks
+  const statusCounts = {};
+  tasks.forEach(task => {
+    const status = task.status || 'Unknown';
+    statusCounts[status] = (statusCounts[status] || 0) + 1;
+  });
+  const pieData = Object.entries(statusCounts)
+    .filter(([_, value]) => value > 0)
+    .map(([name, value]) => ({ name, value }));
+
   return (
-    <div className="min-h-screen w-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Navbar />
-
-      <div className="w-full min-h-[calc(100vh-64px)] px-4 sm:px-6 lg:px-8 py-8">
-        <div className="bg-white rounded-2xl shadow-xl p-6 mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                {user?.role === 'admin' ? 'All Tasks' : 'My Tasks'}
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                {user?.role === 'admin'
-                  ? 'Manage and assign tasks for all users'
-                  : 'Manage and track your tasks efficiently'}
-              </p>
-            </div>
-
-            <div className="flex items-center gap-4">
-              <div className="flex rounded-lg shadow-sm">
-                {['all', 'pending', 'completed'].map((type, idx) => (
-                  <button
-                    key={type}
-                    onClick={() => setFilter(type)}
-                    className={`px-4 py-2 text-sm font-medium ${
-                      idx === 0
-                        ? 'rounded-l-lg'
-                        : idx === 2
-                        ? 'rounded-r-lg'
-                        : ''
-                    } ${
-                      filter === type
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                  >
-                    {type[0].toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
-              </div>
-
-              <button
-                onClick={() => {
-                  setShowForm((prev) => !prev);
-                  setEditTask(null);
-                }}
-                className="inline-flex items-center px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+    <div>
+      {user?.role === 'admin' && pieData.length > 0 && (
+        <div className="card" style={{ maxWidth: 400, margin: '2rem auto' }}>
+          <h3 className="text-center">Task Status Overview</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <PieChart>
+              <Pie
+                data={pieData}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={80}
+                label
               >
-                {showForm ? (
-                  <>
-                    <svg
-                      className="-ml-1 mr-2 h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                    Cancel
-                  </>
-                ) : (
-                  <>
-                    <svg
-                      className="-ml-1 mr-2 h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M12 4v16m8-8H4"
-                      />
-                    </svg>
-                    Add Task
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
+                {pieData.map((entry, idx) => (
+                  <Cell key={`cell-${idx}`} fill={getColor(idx)} />
+                ))}
+              </Pie>
+              <Tooltip />
+              <Legend />
+            </PieChart>
+          </ResponsiveContainer>
         </div>
-
-        {showForm && (
-          <div className="mb-8">
-            <TaskForm
-              onClose={handleTaskFormClose}
-              refreshTasks={() => dispatch(fetchTasks())}
-              taskToEdit={editTask}
-            />
-          </div>
-        )}
-
-        {loading && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          </div>
-        )}
-
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded">
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-
-        {!loading && filteredTasks.length === 0 && (
-          <div className="text-center py-12 bg-white rounded-2xl shadow-xl">
-            <svg
-              className="mx-auto h-12 w-12 text-gray-400"
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2"
-              />
-            </svg>
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No tasks</h3>
-            <p className="mt-1 text-sm text-gray-500">
-              {filter === 'all'
-                ? 'Get started by creating a new task.'
-                : filter === 'completed'
-                ? 'No completed tasks yet.'
-                : 'No pending tasks.'}
-            </p>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredTasks.map((task) => (
-            <TaskCard key={task._id} task={task} onEdit={handleTaskEdit} />
-          ))}
+      )}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+        <div>
+          <h2 className="text-2xl font-bold">Dashboard</h2>
+          <div className="text-gray-600">Welcome, {user?.name}!</div>
         </div>
+        <div className="flex gap-2 mt-2 md:mt-0">
+          <button onClick={() => { setEditTask(null); setShowForm(true); }} className="bg-blue-600 text-white px-4 py-2 rounded">+ New Task</button>
+        </div>
+      </div>
+      <div className="flex gap-4 mb-4 flex-wrap">
+        <div className="bg-white p-4 rounded shadow flex-1">
+          <div className="font-bold">Total</div>
+          <div className="text-2xl">{stats.total}</div>
+        </div>
+        <div className="bg-green-100 p-4 rounded shadow flex-1">
+          <div className="font-bold">Completed</div>
+          <div className="text-2xl">{stats.completed}</div>
+        </div>
+        <div className="bg-yellow-100 p-4 rounded shadow flex-1">
+          <div className="font-bold">ongoing</div>
+          <div className="text-2xl">{stats.ongoing}</div>
+        </div>
+      </div>
+      <div className="flex gap-2 mb-4 flex-wrap">
+        <input placeholder="Search tasks..." value={search} onChange={e => setSearch(e.target.value)} className="px-2 py-1 border rounded" />
+        <select value={filter} onChange={e => setFilter(e.target.value)}>
+          <option value="">All Status</option>
+          <option value="ongoing">Ongoing</option>
+          <option value="in progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+        <select value={sort} onChange={e => setSort(e.target.value)}>
+          <option value="">Sort By</option>
+          <option value="dueDate">Due Date</option>
+          <option value="priority">Priority</option>
+        </select>
+      </div>
+      {loading && <Loader />}
+      {error && <div className="text-red-500">{error}</div>}
+      {showForm && (
+        <div className="bg-gray-100 p-4 rounded mb-4">
+          <TaskForm
+            onSubmit={editTask ? handleUpdate : handleCreate}
+            initialValues={editTask || { assignedTo: user._id }}
+            users={users}
+            isAdmin={user?.role === 'admin'}
+            loading={loading}
+          />
+        </div>
+      )}
+      <div>
+        {filteredTasks.map(task => (
+          <Taskcard
+            key={task._id}
+            task={task}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+            isAdmin={user?.role === 'admin'}
+            isSelf={task.assignedTo?._id === user?._id}
+          />
+        ))}
       </div>
     </div>
   );
-}
+};
 
-export default DashboardPage;
+export default DashboardPage; 

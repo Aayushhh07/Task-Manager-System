@@ -7,10 +7,6 @@ const store = configureStore({
     auth: authReducer,
     tasks: taskReducer,
   },
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware({
-      serializableCheck: false,
-    }),
 });
 
-export default store;
+export default store; 
