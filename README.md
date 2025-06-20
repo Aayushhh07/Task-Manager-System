@@ -17,6 +17,7 @@ A full-featured task management web application with **user/admin authentication
 
 ## 📂 Project Structure
 
+```
 Task-Manager-System/
 ├── backend/
 │   ├── config/
@@ -61,7 +62,7 @@ Task-Manager-System/
 │   ├── tailwind.config.js
 │   └── vite.config.js
 └── README.md
-
+```
 
 
 ---
