@@ -17,25 +17,50 @@ A full-featured task management web application with **user/admin authentication
 
 ## 📂 Project Structure
 
-taskManager/
+Task-Manager-System/
 ├── backend/
-│ ├── controllers/
-│ ├── middleware/
-│ ├── models/
-│ ├── routes/
-│ ├── uploads/
-│ └── server.js
-├── frontend/
-│ ├── src/
-│ │ ├── components/
-│ │ ├── pages/
-│ │ ├── redux/
-│ │ ├── services/
-│ │ └── main.jsx
-│ ├── public/
-│ └── index.html
-├── README.md
-└── .env
+│   ├── config/
+│   │   └── db.js
+│   ├── controllers/
+│   │   ├── authController.js
+│   │   ├── taskController.js
+│   │   └── userController.js
+│   ├── Dockerfile
+│   ├── middleware/
+│   │   ├── authMiddleware.js
+│   │   └── roleMiddleware.js
+│   ├── models/
+│   │   ├── Task.js
+│   │   └── User.js
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── README.md
+│   ├── routes/
+│   │   ├── authRoutes.js
+│   │   ├── taskRoutes.js
+│   │   └── userRoutes.js
+│   ├── scripts/
+│   │   ├── checkDatabase.js
+│   │   ├── convertPendingToOngoing.js
+│   │   ├── getUserId.js
+│   │   └── seedTasks.js
+│   ├── server.js
+│   ├── tests/
+│   │   ├── auth.test.js
+│   │   └── task.test.js
+│   └── uploads/
+├── docker-compose.yml
+├── Dockerfile
+├── package-lock.json
+├── react_Assignment/
+│   ├── index.html
+│   ├── package-lock.json
+│   ├── package.json
+│   ├── postcss.config.js
+│   ├── README.md
+│   ├── tailwind.config.js
+│   └── vite.config.js
+└── README.md
 
 
 
