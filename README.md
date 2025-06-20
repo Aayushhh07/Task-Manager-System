@@ -98,7 +98,7 @@ Create .env file:
 -MONGO_URI=mongodb://localhost:27017/taskMngmt
 -JWT_SECRET=your_jwt_secret_key
 
-##Start backend server:
+Start backend server:
 ```npm run dev ```
 
 
